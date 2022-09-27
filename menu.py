@@ -1,2 +1,3 @@
 class menu:
-    pass
+    def menu_loop():
+        pass

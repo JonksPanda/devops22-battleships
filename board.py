@@ -1,24 +1,37 @@
-#creates an object for each coordinate
-class coordinate:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.status = None
-    def print_coordinate(self):
-        pass
+import players
 
+#creates an object for each coordinate
 class board:
     #x and y decides how many rows to add horisontally(x) and vertically(y) default is 10
     def __init__(self, x=10, y=10):
         self.x = x
         self.y = y
-
+        self.boardlayout = []
         #Lists all ships belonging to player
         self.players_ships = []
+        self.generate_board()
 
-        
-    def write_board(self):
-        pass
+    def generate_board(self):
+        for y in range(self.y):
+            row = []
+            for x in range(self.x):
+                row.append("O")
+            self.boardlayout.append(row)    
+
+    
+    def populate_board(self):
+        for ship in self.players_ships:
+            for coordinate in ship:
+                self.boardlayout[coordinate[1]][coordinate[0]] = "#"
+
+
+    def print_board(self):
+        print('\n'.join(map(str, self.boardlayout))) #Code used from https://github.com/fictive-reality/devops22-python/blob/master/lesson_6/examples/7_copy.py
 
 if __name__ == "__main__":
-    board().write_board()
+
+    player_board = board()
+    player_board.generate_board()
+    #player_board.print_board()
+    player_board.populate_board()
+    player_board.print_board()
