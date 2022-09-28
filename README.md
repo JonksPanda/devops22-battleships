@@ -5,11 +5,11 @@
 - [x] Create Repo
 - [x] Make new branch
 - [x] Make a plan on how to structure program
-- [ ] Add all python-files neccesary for the base
+- [x] Add all python-files neccesary for the base
 - [ ] Code the base
-  - [ ] Create a board-generator
-  - [ ] Create a function to place all ships on board
-    - [ ] Let player input placements
+  - [x] Create a board-generator
+  - [x] Create a function to place all ships on board
+    - [x] Let player input placements
     - [ ] add so that AI can put ships on board
     - [ ] add a funtion to read file with AI-placements
   - [ ] Add funtion to let player shoot ships on board
