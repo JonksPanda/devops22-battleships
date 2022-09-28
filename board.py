@@ -22,7 +22,7 @@ class board:
     def populate_board(self):
         for ship in self.players_ships:
             for coordinate in ship:
-                self.boardlayout[coordinate[1]][coordinate[0]] = "#"
+                self.boardlayout[coordinate[1]][coordinate[0]] = chr(9608)
 
 
     def print_board(self):
