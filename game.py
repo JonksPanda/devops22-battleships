@@ -9,8 +9,9 @@ class gamecontrol:
         self.ai = players.ai()
 
         #Let's players place ships on board on init
-        self.human_player.place_ships()
+        #self.human_player.place_ships()
         self.ai.place_ships()
+        self.human_player.target_shot(6, 3, self.ai)
     
 
     def gameloop(self):
