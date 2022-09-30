@@ -10,10 +10,10 @@
   - [x] Create a board-generator
   - [x] Create a function to place all ships on board
     - [x] Let player input placements
-    - [ ] add so that AI can put ships on board
+    - [x] add so that AI can put ships on board
     - [ ] add a funtion to read file with AI-placements
-  - [ ] Add funtion to let player shoot ships on board
-    - [ ] Add so that AI also can shoot the players ship on board
+  - [x] Add funtion to let player shoot ships on board
+    - [x] Add so that AI also can shoot the players ship on board
   - [ ] Add function that that register who won and how many tries it took
 - [ ] Add extra-stuff
   
