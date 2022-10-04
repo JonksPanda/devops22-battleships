@@ -6,8 +6,9 @@ class board:
     def __init__(self, x=10, y=10):
         self.x = x
         self.y = y
+        #Stores the visible board
         self.boardlayout = []
-        #Lists all ships belonging to player
+        #Lists all ships coordinates belonging to player
         self.players_ships = []
         self.generate_board()
 
@@ -26,6 +27,7 @@ class board:
 
 
     def print_board(self):
+        print(['1','2','3','4','5','6','7','8','9','10'])
         print('\n'.join(map(str, self.boardlayout))) #Code used from https://github.com/fictive-reality/devops22-python/blob/master/lesson_6/examples/7_copy.py
 
 if __name__ == "__main__":
