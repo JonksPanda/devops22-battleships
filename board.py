@@ -10,6 +10,7 @@ class board:
         self.boardlayout = []
         #Lists all ships coordinates belonging to player
         self.players_ships = []
+        #generates board on init
         self.generate_board()
 
     def generate_board(self):
@@ -17,23 +18,18 @@ class board:
             row = []
             for x in range(self.x):
                 row.append("O")
-            self.boardlayout.append(row)    
+            self.boardlayout.append(row)
 
-    
+    #Puts ships on board
     def populate_board(self):
         for ship in self.players_ships:
             for coordinate in ship:
                 self.boardlayout[coordinate[1]][coordinate[0]] = chr(9608)
 
-
+    
     def print_board(self):
         print(['1','2','3','4','5','6','7','8','9','10'])
         print('\n'.join(map(str, self.boardlayout))) #Code used from https://github.com/fictive-reality/devops22-python/blob/master/lesson_6/examples/7_copy.py
 
 if __name__ == "__main__":
-
-    player_board = board()
-    player_board.generate_board()
-    #player_board.print_board()
-    player_board.populate_board()
-    player_board.print_board()
+    pass

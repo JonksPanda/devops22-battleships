@@ -5,10 +5,10 @@ import time
 
 class menu:
     def __init__(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__)) #https://stackoverflow.com/questions/5137497/find-the-current-directory-and-files-directory
-        #Läser in splash-screen
+        path = os.path.dirname(os.path.realpath(__file__)) #https://stackoverflow.com/questions/5137497/find-the-current-directory-and-files-directory
+        #Reads title
         #https://www.pythontutorial.net/python-basics/python-read-text-file/
-        with open(f"{dir_path}\\other\\splash-text.txt") as file:
+        with open(f"{path}/other/splash-text.txt") as file:
             self.splash = file.read()
 
     def main_menu(self):
@@ -37,6 +37,7 @@ class menu:
             time.sleep(1)
             quit()
         else:
+            os.system("cls")
             self.menu_loop()
 
     def game_menu(self):

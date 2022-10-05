@@ -8,8 +8,10 @@ import stats
 
 class gamecontrol:
     def __init__(self):
+        #adds players to the game
         self.human_player = players.human()
         self.ai = players.ai()
+        #adds stats class to store statistics
         self.stats = stats.stats()
 
         #Let's players place ships on board on init
@@ -20,55 +22,64 @@ class gamecontrol:
     def prepare_game(self):
         os.system("cls")
         print(f"""
-1. Change name (Current: {self.human_player.playername}) 
-2. Load AI Ship-layout (Random Ship-layout as default)
+1. change name (Current: {self.human_player.playername}) 
+2. load AI ship-template (current: {self.ai.template})
 3. start game
 4. exit to menu
         """)
         choice = input("Select an option from the list: ")
+        #change name
         if choice == "1":
             os.system("cls")
-            self.human_player.playername = input("Input your name: ")
+            self.human_player.playername = input("Input your name: ").capitalize()
             if self.human_player.playername == "":
-                self.human_player.playername = "player 1"
+                self.human_player.playername = "Player 1"
             self.prepare_game()
+        #Load template
         elif choice == "2":
             os.system("cls")
-            self.stats.load_boards()
+            while True:
+                #list files to choose from
+                self.ai.load_ship_placements()
+                break
+            self.prepare_game()
+        #starts game and lets player prepare board
         elif choice == "3":
             os.system("cls")
+            self.human_player.place_ships()
+            self.human_player.playerboard.populate_board()
+            self.ai.place_ships()
             return
+        #returns to main menu
         elif choice == "4":
             menu.main()
+        #loads this menu again if wrong input
         else:
-            #loads menu again if wrong input
             self.prepare_game()
 
     def check_win(self, current_player):
+        #Checks if score is more than or equals opponents amount of ships in fleet
         if current_player.score >= 20:
             return True
         else:
             return False
 
+    #prints the game interface
     def interface(self):
             os.system("cls")
             print(f"turn: {self.turn} | {self.human_player.playername}: {self.human_player.score}/{20} | {self.ai.playername}: {self.ai.score}/{20}")
-            print(f"{self.ai.playername}:")
-            self.ai.playerboard.print_board()
-            print("__________________________________________________")
             print(f"{self.human_player.playername}:")
             self.human_player.playerboard.print_board()
+            print("__________________________________________________")
+            print(f"{self.ai.playername}:")
+            self.ai.playerboard.print_board()
+
+
 
     def gameloop(self):
         #flag to break out of nestled loop
         end = False
-
-        self.human_player.place_ships()
-        self.human_player.playerboard.populate_board()
-        self.ai.place_ships()
         while True: 
-            if end:
-                break
 
             #Players turn
             self.turn += 1
@@ -76,7 +87,7 @@ class gamecontrol:
             while True:
                 #Expecting input x,y
                 try:
-                    target_x, target_y = input("Player 1: Choose a coordinate to shoot").split(",")
+                    target_x, target_y = input("Player 1: Choose a coordinate to shoot (x,y)").split(",")
                     target_x = int(target_x)
                     target_y = int(target_y)
                     if self.human_player.check_legal_placement([(target_x, target_y)], placing_ships=False):
@@ -94,6 +105,7 @@ class gamecontrol:
                 except Exception as e:
                     print("Incorrect input!")
                     print(e)
+            #breaks loop before next turn begins if winner is decided
             if end:
                 break
 
@@ -113,27 +125,42 @@ class gamecontrol:
                         break
                 else:
                     break
+            if end:
+                break
+        #Saves stats to database /data/game_data.db
         self.stats.save_stats(winner, self.turn)    
         
     #saves players board layout to file that can be used as AIs layout in another game
     def save_board_layout(self):
-        print("Would you like to save your board-layout? (y/n)")
+        print("Would you like to save your board-layout as template? (y/n)")
         while True:
             answer = input("answer: ")
             if answer.lower() == "y":
-                #https://www.pythontutorial.net/python-basics/python-create-text-file/
-                path = f"{os.path.dirname(os.path.realpath(__file__))}/data/board.txt"
-                with open(path, "w") as file:
-                    file.write(str(self.human_player.playerboard.players_ships))
+                self.human_player.save_ship_placement()
                 break
             elif answer.lower() == "n":
-                pass
+                break
+            else:
+                print("incorrect input!")
+    
+    def restart(self):
+        os.system("cls")
+        print("Do you want to play again? (y/n)")
+        answer = input("answer: ")
+        if answer.lower() == "y":
+            main()
+        elif answer.lower() == "n":
+            menu.main()
+        else:
+            print("incorrect input!")
 
 def main():
     game = gamecontrol()
     game.prepare_game()
     game.gameloop()
     game.save_board_layout()
+    game.restart()
+
 
 if __name__ == "__main__":
     main()

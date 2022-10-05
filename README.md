@@ -1,20 +1,30 @@
 # devops22-battleships
 
+## How to run the game
+
+Start main.py to start the game properly
+
+## How to play
+
+
+
+
+---
 ## To do-list
 
 - [x] Create Repo
 - [x] Make new branch
 - [x] Make a plan on how to structure program
 - [x] Add all python-files neccesary for the base
-- [ ] Code the base
+- [x] Code the base
   - [x] Create a board-generator
   - [x] Create a function to place all ships on board
     - [x] Let player input placements
     - [x] add so that AI can put ships on board
-    - [ ] add a funtion to read file with AI-placements
+    - [x] add a funtion to read file with AI-placements
   - [x] Add funtion to let player shoot ships on board
     - [x] Add so that AI also can shoot the players ship on board
-  - [ ] Add function that that register who won and how many tries it took
+  - [x] Add function that that register who won and how many tries it took
 - [ ] Add extra-stuff
   
 ---
@@ -26,6 +36,7 @@
   - *runs a menu that let's the player start a new game, see stats etc.*
 - board.py
   - *Where class for board should be*
+  - Store functions related to displaying and populating the board
 - player.py
   - *Where class for player should be and player-releated tasks*
   - *Should probably add AI here aswell*

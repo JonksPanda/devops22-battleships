@@ -1,6 +1,7 @@
-from os import system
+import os
 import random
 import board
+import json
 
 default_shiptypes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
@@ -8,8 +9,8 @@ class ship:
     def __init__(self, length, rotation, start_x, start_y):
         self.rotation = rotation.lower()
         self.length = length
-        self.start_x = start_x-1
-        self.start_y = start_y-1
+        self.start_x = start_x
+        self.start_y = start_y
         self.coordinates = self.get_coordinates()
     
     def get_coordinates(self):
@@ -30,10 +31,10 @@ class ship:
 
 
 class player:
-    def __init__(self, playerboard=board.board(), ship_types=default_shiptypes, playername="player 1"):
+    def __init__(self, playerboard=board.board(), ship_types=default_shiptypes, playername="Player 1"):
         self.playerboard=playerboard
         self.ship_types = ship_types
-        self.playerships = []#playerboard.players_ships
+        self.playerships = [] #stores instances of ship-objects
         self.score = 0
         self.playername = playername
 
@@ -72,15 +73,15 @@ class human(player):
 
     def place_ships(self):
         for ship_type in self.ship_types:
-            system("cls")
+            os.system("cls")
             self.playerboard.print_board()
             while True:
                 while True:
                     ship_start_location = input(f"Place ship with {ship_type} blocks (x, y, e.g right)")
                     try:
                         ship_x, ship_y, ship_rotation = ship_start_location.split(",")
-                        ship_x = int(ship_x)
-                        ship_y = int(ship_y)
+                        ship_x = int(ship_x)-1
+                        ship_y = int(ship_y)-1
                         if ship_rotation.lower() == 'right' or ship_rotation.lower() == 'left' or ship_rotation.lower() == 'down' or ship_rotation.lower() == 'up':
                             break
                         else:
@@ -96,24 +97,78 @@ class human(player):
                     break
                 else:
                     print("Collision detected!")
+    def save_ship_placement(self):
+        i = 0
+        ships = []
+        #Fetches all the ships from players fleet
+        for ship in self.playerships:
+            i += 1
+            data = {
+                    "x": ship.start_x,
+                    "y": ship.start_y,
+                    "length": ship.length,
+                    "rotation": ship.rotation
+                }
+            ships.append(data)
+        while True:
+            template_name = input("input template-name: ")
+            #prevents player to leave template_name empty
+            if template_name != "":
+                break
+        json_path = f"{os.path.dirname(os.path.realpath(__file__))}\\data\\fleets\\{template_name}.json"
+        fleet = {"fleet":ships}
+        with open(json_path, 'w') as file:
+            file.write(json.dumps(fleet, indent=4))
 
 class ai(player):
     def __init__(self, playerboard=board.board(), ship_types=[4, 3, 3, 2, 2, 2, 1, 1, 1, 1]):
         super().__init__(playerboard, ship_types)
         self.playername = "CPU"
-        
+        self.template = "random"
 
+    def load_ship_placements(self):
+        #https://www.geeksforgeeks.org/read-json-file-using-python/
+        while True:
+            try:
+                dir = f"{os.path.dirname(os.path.realpath(__file__))}\\data\\fleets\\"
+                #prints the directory where templates is stored
+                #https://pynative.com/python-list-files-in-a-directory/#h-os-scandir-to-get-files-of-a-directory
+                for dir_file in os.scandir(dir):
+                    if dir_file.is_file() and dir_file.name.endswith(".json"):
+                        print(dir_file.name[:-5:])
+                self.template = input("Choose template to load (leave empty for random): ")
+                if self.template == "":
+                    self.template = "random"
+                    break
+                json_path = f"{dir}{self.template}.json"
+                file = open(json_path)
+                data = json.load(file)
+                for playership in data['fleet']:
+                    self.playerships.append(ship(playership["length"], playership["rotation"], playership["x"], playership["y"]))
+                break
+            except Exception:
+                print("Error loading file")
+            os.system("cls")
+        
     def place_ships(self):
-        system("cls")
-        placements = ['right', 'left', 'down', 'up']
+        os.system("cls")
+        rotations = ['right', 'left', 'down', 'up']
         #Only needs to randomize if no ships are loaded
         if len(self.playerships) == 0:
             for ship_type in self.ship_types:
                 while True:
-                    self.playerships.append(ship(ship_type, random.choice(placements), random.randint(0,9), int(random.randint(0,9))))
+                    rotation = random.choice(rotations)
+                    x = random.randint(0,9)
+                    y = random.randint(0,9)
                     
-                    if self.check_legal_placement(self.playerships[len(self.playerships)-1].coordinates):
+                    if self.check_legal_placement(ship(ship_type, rotation, x, y).coordinates):
+                        self.playerships.append(ship(ship_type, rotation, x, y))
                         self.playerboard.players_ships.append(self.playerships[len(self.playerships)-1].coordinates)
-                        self.playerboard.populate_board() #for debugging only
                         break
+        #fills playerboard if ships are already loaded
+        else:
+            for playership in self.playerships: 
+                self.playerboard.players_ships.append(playership.coordinates)
+        self.playerboard.populate_board() #for debugging only
+                        
             

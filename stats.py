@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import menu
 
 class stats:
     
@@ -16,29 +17,54 @@ class stats:
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
                 )
                 '''
-        
+        #Initiates sql-connection
+        self.conn = sqlite3.connect(self.path, isolation_level=None)
+        self.conn.execute(self.CREATE_TABLE_STATS)
         
 
     def save_stats(self, winner, turns):
         #used example https://github.com/fictive-reality/devops22-python/blob/master/lesson_11/examples/7_sql_basics.py
-        with sqlite3.connect(self.path, isolation_level=None) as conn:
-            conn.execute(self.CREATE_TABLE_STATS)
-            conn.execute("INSERT INTO statistics(winner, turns) VALUES(?, ?)", (winner, turns))
+        self.conn.execute("INSERT INTO statistics(winner, turns) VALUES(?, ?)", (winner, turns))
     
-    def load_stats(self):
-        with sqlite3.connect(self.path, isolation_level=None) as conn:
-            conn.execute(self.CREATE_TABLE_STATS)
-            cursor = conn.cursor()
+    def load_stats(self, player):
+        cursor = self.conn.cursor()
+        if player == "":
             cursor.execute("SELECT winner, turns, timestamp FROM statistics")
+        else:
+            cursor.execute("SELECT winner, turns, timestamp FROM statistics WHERE winner LIKE ?", [player])
 
-            rows = cursor.fetchall()
+        rows = cursor.fetchall()
+        turns = []
+        most_wins = []
 
-            for row in rows:
-                print(row)
-            input()
+        print("Winner | Turns | Time")
+        for row in rows:
+            print(f"{row[0]} | {row[1]} | {row[2]}")
+            turns.append(row[1])
+            most_wins.append(row[0])
+        print(f"Most wins: {max(set(most_wins), key = most_wins.count)} | total games played: {len(rows)} | Average turns: {sum(turns) / len(turns)}\n") #How to get average https://www.geeksforgeeks.org/find-average-list-python/ https://www.geeksforgeeks.org/python-find-most-frequent-element-in-a-list/
+
+    
+    def stats_menu(self, player=""):
+        self.load_stats(player)
+        print("""
+1. search player
+2. exit to menu
+        """)
+        choice = input("option: ")
+        if choice == "1":
+            name = input("input name to search: ")
+            os.system("cls")
+            self.stats_menu(name)
+        elif choice == "2":
+            menu.main()
+        else:
+            os.system("cls")
+            self.stats_menu()
 
 def main():
-    stats().load_stats()
+    statistics = stats()
+    statistics.stats_menu()
 
 if __name__ == "__main__":
     main()
