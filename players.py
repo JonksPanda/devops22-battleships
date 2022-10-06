@@ -2,6 +2,7 @@ import os
 import random
 import board
 import json
+import time
 
 default_shiptypes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
@@ -31,24 +32,35 @@ class ship:
 
 
 class player:
-    def __init__(self, playerboard=board.board(), ship_types=default_shiptypes, playername="Player 1"):
+    def __init__(self, playerboard=board.board(), ship_types=default_shiptypes, playername=""):
         self.playerboard=playerboard
         self.ship_types = ship_types
         self.playerships = [] #stores instances of ship-objects
         self.score = 0
         self.playername = playername
+        self.targets_hit = [] #stores all targets hit
+
+        #stores previous targets
+        self.target_x_store = int()
+        self.target_y_store = int()
+
 
     #checks if out of bounds. Also checks if a coordinate is occupied if "placing_ships" is True
+    #ship_coordinates is expected to contain a list of tuples
     def check_legal_placement(self, ship_coordinates, placing_ships=True):
         for coordinate in ship_coordinates:
             #Checks if coordinate is "out of bounds"
-            if (coordinate[0] > self.playerboard.y or coordinate[0] < 0) or (coordinate[1] > self.playerboard.x or coordinate[1] < 0):
+            if (coordinate[0] > self.playerboard.y-1 or coordinate[0] <= -1) or (coordinate[1] > self.playerboard.x-1 or coordinate[1] <= -1):
                 return False
             #Checks for colliding coordinates
             if placing_ships:
                 for occupied_coordinate in self.playerboard.players_ships:
                     if coordinate in occupied_coordinate:
                         return False
+            else:
+                if coordinate in self.targets_hit:
+                    return False
+        #returns true only if none of the conditions above are met
         return True
     
     def target_shot(self, x, y, opponent):
@@ -56,20 +68,22 @@ class player:
         hit = False
 
         for opponent_ship in opponent.playerboard.players_ships:
-            for coordinate in opponent_ship:
-                if coordinate == (x, y):
-                    opponent.playerboard.boardlayout[y][x] = "X"
-                    hit = True
-                    self.score += 1
-                    opponent_ship.remove(coordinate)
-                    return hit
-                else:
-                    opponent.playerboard.boardlayout[y][x] = "*"
+            if (x, y) in opponent_ship:
+                opponent.playerboard.boardlayout[y][x] = "X"
+                hit = True
+                self.score += 1
+                opponent_ship.remove((x,y))
+                #breaks loop when coordinate matches an opponents coordinate
+                break
+            else:
+                opponent.playerboard.boardlayout[y][x] = "*"
+        #adds coordinate to list of coordinates shot at
+        self.targets_hit.append((x, y))
         return hit
 
 class human(player):
-    def __init__(self, playerboard=board.board(), ship_types=default_shiptypes):
-        super().__init__(playerboard, ship_types)
+    def __init__(self, playerboard=board.board(), ship_types=default_shiptypes, playername="Player 1"):
+        super().__init__(playerboard, ship_types, playername)
 
     def place_ships(self):
         for ship_type in self.ship_types:
@@ -77,7 +91,7 @@ class human(player):
             self.playerboard.print_board()
             while True:
                 while True:
-                    ship_start_location = input(f"Place ship with {ship_type} blocks (x, y, e.g right)")
+                    ship_start_location = input(f"Place ship with {ship_type} blocks (x,y,*direction* (ex. 5,2,right))")
                     try:
                         ship_x, ship_y, ship_rotation = ship_start_location.split(",")
                         ship_x = int(ship_x)-1
@@ -120,11 +134,28 @@ class human(player):
         with open(json_path, 'w') as file:
             file.write(json.dumps(fleet, indent=4))
 
+    def turn(self, opponent):
+        #Expecting input x,y
+        while True:
+            try:
+                target_x, target_y = input("Player 1: Choose a coordinate to shoot (x,y)").split(",")
+                target_x = int(target_x)-1
+                target_y = int(target_y)-1
+                if self.check_legal_placement([(target_x, target_y)], placing_ships=False):
+                    #checks if player makes a hit and continues turn until player misses
+                    if self.target_shot(target_x, target_y, opponent):
+                        return True
+                    else:
+                        return False
+            except Exception:
+                print("Incorrect input!")
+
 class ai(player):
-    def __init__(self, playerboard=board.board(), ship_types=[4, 3, 3, 2, 2, 2, 1, 1, 1, 1]):
-        super().__init__(playerboard, ship_types)
-        self.playername = "CPU"
+    def __init__(self, playerboard=board.board(), ship_types=[4, 3, 3, 2, 2, 2, 1, 1, 1, 1], playername="CPU"):
+        super().__init__(playerboard, ship_types, playername)
+        self.playername = playername
         self.template = "random"
+        self.hit = False
 
     def load_ship_placements(self):
         #https://www.geeksforgeeks.org/read-json-file-using-python/
@@ -170,5 +201,54 @@ class ai(player):
             for playership in self.playerships: 
                 self.playerboard.players_ships.append(playership.coordinates)
         self.playerboard.populate_board() #for debugging only
-                        
+    
+    def turn(self, opponent):
+        #Storing the coordinates before the loop to make it easier to manipulate
+        print(f"{self.playername}: turn in progress..")
+        #If previous turn was successfull, AI tries to shot next to the previous coordinate
+        if self.hit:
+            target_x = self.target_x_store
+            target_y = self.target_y_store
+            #stores all coordinates that player2 have tried
+            coordinates_tried = []
+            i = 1
+            while True:
+                #decides player2s next move
+                decider = random.randint(1,4)
+                if decider == 1:
+                    if (self.check_legal_placement([(target_x + i, target_y)], placing_ships=False)):
+                        target_x += i
+                elif decider == 2:
+                    if self.check_legal_placement([(target_x - i, target_y)], placing_ships=False):
+                        target_x -= i
+                elif decider == 3:
+                    if self.check_legal_placement([(target_x, target_y + i)], placing_ships=False):
+                        target_y += i
+                elif decider == 4:
+                    if self.check_legal_placement([(target_x, target_y - i)], placing_ships=False):
+                        target_y -= i
+                if (target_x, target_y) not in coordinates_tried:
+                    coordinates_tried.append((target_x, target_y))
+                    break
+                elif len(coordinates_tried) == 4:
+                    i += 1
+                    coordinates_tried = []
+
+        else:
+            while True:
+                target_x = random.randint(0,9)
+                target_y = random.randint(0,9)
+                if self.check_legal_placement([(target_x, target_y)], placing_ships=False):
+                    break
+        #put a sleep to make it easier to see player2s turn and make it seem like it's "thinking" https://realpython.com/python-sleep/
+        time.sleep(1)
+        #checks if player2 makes a hit and continues turn until player2 misses
+        if self.target_shot(target_x, target_y, opponent):
+            self.target_x_store = target_x
+            self.target_y_store = target_y
+            self.hit = True
+            return True
+        else:
+            self.hit = False
+            return False
             

@@ -1,5 +1,4 @@
 import players
-import random
 import os
 import time
 import menu
@@ -7,12 +6,14 @@ import stats
 
 
 class gamecontrol:
-    def __init__(self):
+    def __init__(self, player1 = players.human(), player2 = players.ai()):
         #adds players to the game
-        self.human_player = players.human()
-        self.ai = players.ai()
+        self.player1 = player1
+        self.player2 = player2
         #adds stats class to store statistics
         self.stats = stats.stats()
+        self.winner = ''
+        self.end = False
 
         #Let's players place ships on board on init
 
@@ -22,8 +23,8 @@ class gamecontrol:
     def prepare_game(self):
         os.system("cls")
         print(f"""
-1. change name (Current: {self.human_player.playername}) 
-2. load AI ship-template (current: {self.ai.template})
+1. change name (Current: {self.player1.playername}) 
+2. load player2 ship-template (current: {self.player2.template})
 3. start game
 4. exit to menu
         """)
@@ -31,112 +32,90 @@ class gamecontrol:
         #change name
         if choice == "1":
             os.system("cls")
-            self.human_player.playername = input("Input your name: ").capitalize()
-            if self.human_player.playername == "":
-                self.human_player.playername = "Player 1"
+            self.player1.playername = input("Input your name: ").capitalize()
+            if self.player1.playername == "":
+                self.player1.playername = "Player 1"
             self.prepare_game()
         #Load template
         elif choice == "2":
             os.system("cls")
             while True:
                 #list files to choose from
-                self.ai.load_ship_placements()
+                self.player2.load_ship_placements()
                 break
             self.prepare_game()
         #starts game and lets player prepare board
         elif choice == "3":
             os.system("cls")
-            self.human_player.place_ships()
-            self.human_player.playerboard.populate_board()
-            self.ai.place_ships()
+            self.player1.place_ships()
+            self.player1.playerboard.populate_board()
+            self.player2.place_ships()
             return
-        #returns to main menu
+        #returns to mainn menu
         elif choice == "4":
             menu.main()
-        #loads this menu again if wrong input
+        #loads this menu agplayer2n if wrong input
         else:
             self.prepare_game()
 
-    def check_win(self, current_player):
-        #Checks if score is more than or equals opponents amount of ships in fleet
-        if current_player.score >= 20:
-            return True
-        else:
-            return False
 
-    #prints the game interface
+
+    #prints the game current interface. Also used for updating the screen 
     def interface(self):
             os.system("cls")
-            print(f"turn: {self.turn} | {self.human_player.playername}: {self.human_player.score}/{20} | {self.ai.playername}: {self.ai.score}/{20}")
-            print(f"{self.human_player.playername}:")
-            self.human_player.playerboard.print_board()
+            print(f"turn: {self.turn} | {self.player1.playername}: {self.player1.score}/{20} | {self.player2.playername}: {self.player2.score}/{20}")
+            print(f"{self.player1.playername}:")
+            self.player1.playerboard.print_board()
             print("__________________________________________________")
-            print(f"{self.ai.playername}:")
-            self.ai.playerboard.print_board()
-
-
+            print(f"{self.player2.playername}:")
+            self.player2.playerboard.print_board()
 
     def gameloop(self):
         #flag to break out of nestled loop
-        end = False
         while True: 
-
-            #Players turn
             self.turn += 1
-            self.interface()
+            #Player1s turn
             while True:
-                #Expecting input x,y
-                try:
-                    target_x, target_y = input("Player 1: Choose a coordinate to shoot (x,y)").split(",")
-                    target_x = int(target_x)
-                    target_y = int(target_y)
-                    if self.human_player.check_legal_placement([(target_x, target_y)], placing_ships=False):
-                        #checks if player makes a hit and continues turn until player misses
-                        if self.human_player.target_shot(target_x-1, target_y-1, opponent=self.ai):
-                            #checks if win-condition is met
-                            self.interface()
-                            if self.check_win(self.human_player):
-                                winner = self.human_player.playername
-                                print(f"Congratulations! You won!")
-                                end = True
-                                break
-                        else:
-                            break
-                except Exception as e:
-                    print("Incorrect input!")
-                    print(e)
-            #breaks loop before next turn begins if winner is decided
-            if end:
-                break
-
-            #AIs turn
-            self.interface()
-            print("AI: turn in progress..")
-            #put a sleep to make it easier to see AIs turn and make it seem like it's "thinking" https://realpython.com/python-sleep/
-            time.sleep(3)
-            while True:
-                #checks if AI makes a hit and continues turn until AI misses
-                if self.ai.target_shot(random.randint(0,9), random.randint(0,9), opponent=self.human_player):
-                    if self.check_win(self.ai):
-                        winner = self.ai.playername
-                        self.interface()
-                        print(f"You lose! Better luck next time..")
-                        end = True
+                self.interface()
+                if self.player1.turn(self.player2):
+                #breaks loop before next turn begins if winner is decided
+                    if self.player1.score >= 20:
+                        self.winner = self.player1.playername
+                        self.end = True
                         break
                 else:
                     break
-            if end:
+
+            if self.end:
+                print(f"{self.winner} has won!")
+                break
+
+            #player2s turn
+            while True:
+                self.interface()
+                if self.player2.turn(self.player1):
+                #breaks loop before next turn begins if winner is decided
+                    if self.player2.score >= 20:
+                        self.winner = self.player2.playername
+                        self.end = True
+                        break
+                else:
+                    break
+
+            #breaks loop before next turn begins if winner is decided
+            if self.end:
+                print(f"{self.winner} has won!")
                 break
         #Saves stats to database /data/game_data.db
-        self.stats.save_stats(winner, self.turn)    
+        self.stats.save_stats(self.winner, self.turn)    
         
-    #saves players board layout to file that can be used as AIs layout in another game
+    #saves players board layout to file that can be used as player2s layout in another game
     def save_board_layout(self):
         print("Would you like to save your board-layout as template? (y/n)")
         while True:
             answer = input("answer: ")
             if answer.lower() == "y":
-                self.human_player.save_ship_placement()
+                self.player1.save_ship_placement()
                 break
             elif answer.lower() == "n":
                 break
@@ -145,7 +124,7 @@ class gamecontrol:
     
     def restart(self):
         os.system("cls")
-        print("Do you want to play again? (y/n)")
+        print("Do you want to play agplayer2n? (y/n)")
         answer = input("answer: ")
         if answer.lower() == "y":
             main()
