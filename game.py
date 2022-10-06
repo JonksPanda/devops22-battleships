@@ -1,6 +1,5 @@
 import players
 import os
-import time
 import menu
 import stats
 
@@ -10,10 +9,13 @@ class gamecontrol:
         #adds players to the game
         self.player1 = player1
         self.player2 = player2
-        #adds stats class to store statistics
+        self.show_ai_board = False
+        #adds stats class to store statistics. Creates SQL-connection on init
         self.stats = stats.stats()
         self.winner = ''
         self.end = False
+        self.win_score = 20
+        
 
         #Let's players place ships on board on init
 
@@ -24,7 +26,7 @@ class gamecontrol:
         os.system("cls")
         print(f"""
 1. change name (Current: {self.player1.playername}) 
-2. load player2 ship-template (current: {self.player2.template})
+2. load AI ship-template (current: {self.player2.template})
 3. start game
 4. exit to menu
         """)
@@ -51,10 +53,10 @@ class gamecontrol:
             self.player1.playerboard.populate_board()
             self.player2.place_ships()
             return
-        #returns to mainn menu
+        #returns to main menu
         elif choice == "4":
             menu.main()
-        #loads this menu agplayer2n if wrong input
+        #loads this menu again if wrong input
         else:
             self.prepare_game()
 
@@ -63,12 +65,26 @@ class gamecontrol:
     #prints the game current interface. Also used for updating the screen 
     def interface(self):
             os.system("cls")
-            print(f"turn: {self.turn} | {self.player1.playername}: {self.player1.score}/{20} | {self.player2.playername}: {self.player2.score}/{20}")
+            print(f"turn: {self.turn} | {self.player1.playername}: {self.player1.score}/{self.win_score} | {self.player2.playername}: {self.player2.score}/{self.win_score}")
             print(f"{self.player1.playername}:")
             self.player1.playerboard.print_board()
             print("__________________________________________________")
             print(f"{self.player2.playername}:")
             self.player2.playerboard.print_board()
+            print(f"""
+Legend:
+    O = Empty spot
+    X = Hit
+    * = Miss
+    {chr(9608)} = ship         
+            """)
+
+    def check_win(self, player):
+        if player.score >= self.win_score:
+            self.winner = player.playername
+            self.end = True
+            return True
+        return False
 
     def gameloop(self):
         #flag to break out of nestled loop
@@ -79,9 +95,7 @@ class gamecontrol:
                 self.interface()
                 if self.player1.turn(self.player2):
                 #breaks loop before next turn begins if winner is decided
-                    if self.player1.score >= 20:
-                        self.winner = self.player1.playername
-                        self.end = True
+                    if self.check_win(self.player1):
                         break
                 else:
                     break
@@ -95,15 +109,14 @@ class gamecontrol:
                 self.interface()
                 if self.player2.turn(self.player1):
                 #breaks loop before next turn begins if winner is decided
-                    if self.player2.score >= 20:
-                        self.winner = self.player2.playername
-                        self.end = True
+                    if self.check_win(self.player2):
                         break
                 else:
                     break
 
             #breaks loop before next turn begins if winner is decided
             if self.end:
+                self.interface()
                 print(f"{self.winner} has won!")
                 break
         #Saves stats to database /data/game_data.db
@@ -124,7 +137,7 @@ class gamecontrol:
     
     def restart(self):
         os.system("cls")
-        print("Do you want to play agplayer2n? (y/n)")
+        print("Do you want to play again? (y/n)")
         answer = input("answer: ")
         if answer.lower() == "y":
             main()

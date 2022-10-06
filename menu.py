@@ -55,6 +55,7 @@ class menu:
             self.main_menu()
 
 def main():
+    os.system("cls")
     menu().menu_loop()
 
 if __name__ == "__main__":

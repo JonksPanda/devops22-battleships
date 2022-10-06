@@ -3,6 +3,7 @@ import random
 import board
 import json
 import time
+import main
 
 default_shiptypes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
@@ -46,17 +47,22 @@ class player:
 
 
     #checks if out of bounds. Also checks if a coordinate is occupied if "placing_ships" is True
-    #ship_coordinates is expected to contain a list of tuples
+    #ship_coordinates is expected to contain a list of tuples with coordinates
     def check_legal_placement(self, ship_coordinates, placing_ships=True):
         for coordinate in ship_coordinates:
             #Checks if coordinate is "out of bounds"
-            if (coordinate[0] > self.playerboard.y-1 or coordinate[0] <= -1) or (coordinate[1] > self.playerboard.x-1 or coordinate[1] <= -1):
+            if (coordinate[0] > self.playerboard.x-1 or coordinate[0] <= -1) or (coordinate[1] > self.playerboard.y-1 or coordinate[1] <= -1):
                 return False
-            #Checks for colliding coordinates
+            #Checks for colliding coordinates in ship-placement-phase
             if placing_ships:
-                for occupied_coordinate in self.playerboard.players_ships:
-                    if coordinate in occupied_coordinate:
+                for occupied_coordinates in self.playerboard.players_ships:
+                    #checks if any of the new coordinates are already occupied
+                    if coordinate in occupied_coordinates:
                         return False
+                    #checks if any ajdacent coordinates are occupied
+                    elif ((coordinate[0] + 1, coordinate[1]) in occupied_coordinates) or ((coordinate[0] - 1, coordinate[1]) in occupied_coordinates) or ((coordinate[0], coordinate[1] + 1) in occupied_coordinates) or ((coordinate[0], coordinate[1] - 1) in occupied_coordinates):
+                        return False
+            #checks if coordinate is already hit if it's not in ship-placement phase
             else:
                 if coordinate in self.targets_hit:
                     return False
@@ -67,6 +73,7 @@ class player:
         #Flag to break out of nested loop
         hit = False
 
+        #checks if any of the opponents ships are the same as input
         for opponent_ship in opponent.playerboard.players_ships:
             if (x, y) in opponent_ship:
                 opponent.playerboard.boardlayout[y][x] = "X"
@@ -91,9 +98,9 @@ class human(player):
             self.playerboard.print_board()
             while True:
                 while True:
-                    ship_start_location = input(f"Place ship with {ship_type} blocks (x,y,*direction* (ex. 5,2,right))")
                     try:
-                        ship_x, ship_y, ship_rotation = ship_start_location.split(",")
+                        #Gets the starting position of the ship and rotation
+                        ship_x, ship_y, ship_rotation = (input(f"Place ship with {ship_type} blocks (x,y,*direction* (ex. 5,2,right))").replace(" ", "")).split(",")
                         ship_x = int(ship_x)-1
                         ship_y = int(ship_y)-1
                         if ship_rotation.lower() == 'right' or ship_rotation.lower() == 'left' or ship_rotation.lower() == 'down' or ship_rotation.lower() == 'up':
@@ -110,7 +117,7 @@ class human(player):
                     self.playerboard.populate_board()
                     break
                 else:
-                    print("Collision detected!")
+                    print("Illegal move!")
     def save_ship_placement(self):
         i = 0
         ships = []
@@ -137,8 +144,11 @@ class human(player):
     def turn(self, opponent):
         #Expecting input x,y
         while True:
+            player_input = input("Player 1: Choose a coordinate to shoot (x,y) or Type exit to exit game: ").replace(" ","")
+            if player_input.lower() == "exit":
+                main.main()
             try:
-                target_x, target_y = input("Player 1: Choose a coordinate to shoot (x,y)").split(",")
+                target_x, target_y = player_input.split(",")
                 target_x = int(target_x)-1
                 target_y = int(target_y)-1
                 if self.check_legal_placement([(target_x, target_y)], placing_ships=False):
@@ -155,6 +165,7 @@ class ai(player):
         super().__init__(playerboard, ship_types, playername)
         self.playername = playername
         self.template = "random"
+        #True if last shot was successfull
         self.hit = False
 
     def load_ship_placements(self):
@@ -200,16 +211,16 @@ class ai(player):
         else:
             for playership in self.playerships: 
                 self.playerboard.players_ships.append(playership.coordinates)
-        self.playerboard.populate_board() #for debugging only
+        #self.playerboard.populate_board() #for debugging only
     
     def turn(self, opponent):
         #Storing the coordinates before the loop to make it easier to manipulate
         print(f"{self.playername}: turn in progress..")
-        #If previous turn was successfull, AI tries to shot next to the previous coordinate
+        #If previous turn was successful, AI tries to shot next to the previous coordinate
         if self.hit:
             target_x = self.target_x_store
             target_y = self.target_y_store
-            #stores all coordinates that player2 have tried
+            #stores all coordinates that player have tried
             coordinates_tried = []
             i = 1
             while True:
@@ -218,18 +229,21 @@ class ai(player):
                 if decider == 1:
                     if (self.check_legal_placement([(target_x + i, target_y)], placing_ships=False)):
                         target_x += i
+                        break
                 elif decider == 2:
                     if self.check_legal_placement([(target_x - i, target_y)], placing_ships=False):
                         target_x -= i
+                        break
                 elif decider == 3:
                     if self.check_legal_placement([(target_x, target_y + i)], placing_ships=False):
                         target_y += i
+                        break
                 elif decider == 4:
                     if self.check_legal_placement([(target_x, target_y - i)], placing_ships=False):
                         target_y -= i
-                if (target_x, target_y) not in coordinates_tried:
+                        break
+                if (target_x, target_y) not in coordinates_tried and target_x:
                     coordinates_tried.append((target_x, target_y))
-                    break
                 elif len(coordinates_tried) == 4:
                     i += 1
                     coordinates_tried = []

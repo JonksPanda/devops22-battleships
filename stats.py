@@ -36,14 +36,15 @@ class stats:
         rows = cursor.fetchall()
         turns = []
         most_wins = []
-
-        print("Winner | Turns | Time")
-        for row in rows:
-            print(f"{row[0]} | {row[1]} | {row[2]}")
-            turns.append(row[1])
-            most_wins.append(row[0])
-        print(f"Most wins: {max(set(most_wins), key = most_wins.count)} | total games played: {len(rows)} | Average turns: {sum(turns) / len(turns)}\n") #How to get average https://www.geeksforgeeks.org/find-average-list-python/ https://www.geeksforgeeks.org/python-find-most-frequent-element-in-a-list/
-
+        try: 
+            print("Winner | Turns | Time")
+            for row in rows:
+                print(f"{row[0]} | {row[1]} | {row[2]}")
+                turns.append(row[1])
+                most_wins.append(row[0])
+            print(f"Most wins: {max(set(most_wins), key = most_wins.count)} | total games played: {len(rows)} | Average turns: {sum(turns) / len(turns)}\n") #How to get average https://www.geeksforgeeks.org/find-average-list-python/ https://www.geeksforgeeks.org/python-find-most-frequent-element-in-a-list/
+        except Exception:
+            print("No entries found..")
     
     def stats_menu(self, player=""):
         self.load_stats(player)
