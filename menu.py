@@ -16,8 +16,9 @@ class menu:
 
         menu_options = """
 1. start/load game
-2. load stats
-3. quit
+2. AI vs AI (Kinda broken rn)
+3. load stats
+4. quit
         """
         print(menu_options)
         choice = input("option: ")
@@ -27,12 +28,17 @@ class menu:
             time.sleep(1)
             os.system("cls")
             game.main()
+        #Not fully working right now. Just to show that it's possible
         elif choice == "2":
+            print("starting game.. ")
+            time.sleep(1)
+            game.ai_vs_ai()
+        elif choice == "3":
             print("loading stats..")
             time.sleep(1)
             os.system("cls")
             stats.main()
-        elif choice == "3":
+        elif choice == "4":
             print("quitting game.. ")
             time.sleep(1)
             quit()

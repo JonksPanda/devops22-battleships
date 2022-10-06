@@ -14,7 +14,7 @@ class gamecontrol:
         self.stats = stats.stats()
         self.winner = ''
         self.end = False
-        self.win_score = 20
+        self.win_score = 20 #Win condition is temporarily hardcoded. 
         
 
         #Let's players place ships on board on init
@@ -49,9 +49,7 @@ class gamecontrol:
         #starts game and lets player prepare board
         elif choice == "3":
             os.system("cls")
-            self.player1.place_ships()
-            self.player1.playerboard.populate_board()
-            self.player2.place_ships()
+            self.prepare_board()
             return
         #returns to main menu
         elif choice == "4":
@@ -60,7 +58,10 @@ class gamecontrol:
         else:
             self.prepare_game()
 
-
+    def prepare_board(self):
+        self.player1.place_ships()
+        self.player1.playerboard.populate_board()
+        self.player2.place_ships()
 
     #prints the game current interface. Also used for updating the screen 
     def interface(self):
@@ -153,6 +154,13 @@ def main():
     game.save_board_layout()
     game.restart()
 
+#Just for showcase
+def ai_vs_ai():
+    game = gamecontrol(player1=players.ai(playername="CPU 1"), player2=players.ai(playername="CPU 2"))
+    game.prepare_board()
+    game.gameloop()
+    game.save_board_layout()
+    game.restart()
 
 if __name__ == "__main__":
     main()
